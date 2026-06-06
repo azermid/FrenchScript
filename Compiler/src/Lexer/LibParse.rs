@@ -1,9 +1,13 @@
-mod Libparse;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
+use crate::Token;
+use crate::TokenType;
+use crate::Span;
+use crate::LexerResult;
+use crate::CompilerError;
 
-fn pass_whitespace(chars: &[char], current: &mut usize)
+pub fn pass_whitespace(chars: &[char], current: &mut usize)
 {
     while *current < chars.len()
         && chars[*current].is_whitespace()
@@ -13,7 +17,7 @@ fn pass_whitespace(chars: &[char], current: &mut usize)
 }
 
 
-fn get_word(chars: &[char], current: &mut usize) -> String
+pub fn get_word(chars: &[char], current: &mut usize) -> String
 {
     let mut word = String::new();
 
@@ -28,7 +32,7 @@ fn get_word(chars: &[char], current: &mut usize) -> String
     word
 }
 
-fn get_number(chars: &[char], current: &mut usize) -> String
+pub fn get_number(chars: &[char], current: &mut usize) -> String
 {
     let mut number = String::new();
 
@@ -42,7 +46,35 @@ fn get_number(chars: &[char], current: &mut usize) -> String
     number
 }
 
-fn get_token(chars: &[char],current: &mut usize,line: usize,file: &str,) -> LexerResult<Token>
+fn get_string(
+    chars: &[char],
+    current: &mut usize,
+) -> Result<String, String>
+{
+    let mut result = String::new();
+
+    // saute le "
+    *current += 1;
+
+    while *current < chars.len()
+        && chars[*current] != '"'
+    {
+        result.push(chars[*current]);
+        *current += 1;
+    }
+
+    if *current >= chars.len() {
+        return Err(
+            "String non fermée".to_string()
+        );
+    }
+
+    *current += 1;
+
+    Ok(result)
+}
+
+pub fn get_token(chars: &[char],current: &mut usize,line: usize,file: &str,) -> LexerResult<Token>
 {
     pass_whitespace(chars, current);
 
@@ -62,6 +94,34 @@ fn get_token(chars: &[char],current: &mut usize,line: usize,file: &str,) -> Lexe
     let start = *current;
     let c = chars[*current];
 
+    if c == '"' {
+
+        let string =
+            get_string(chars, current)
+                .map_err(|message| {
+                    CompilerError {
+                        file: file.to_string(),
+                        message,
+                        span: Span {
+                            line,
+                            column: start,
+                            length: 1,
+                        },
+                    }
+                })?;
+
+        return Ok(Token {
+            token_type:
+                TokenType::StringLiteral(string),
+
+            span: Span {
+                line,
+                column: start,
+                length: *current - start,
+            },
+        });
+    }
+
     if c.is_alphabetic() || c == '_' {
 
         let word = get_word(chars, current);
@@ -69,9 +129,14 @@ fn get_token(chars: &[char],current: &mut usize,line: usize,file: &str,) -> Lexe
         let token_type = match word.as_str() {
             "fonction" => TokenType::Function,
             "retourner" => TokenType::Return,
+
+            "entier" => TokenType::TypeInt,
+            "decimal" => TokenType::TypeFloat,
+            "Texte" => TokenType::TypeText,
+            "vide" => TokenType::TypeVoid,
+
             _ => TokenType::Identifier(word),
         };
-
         return Ok(
             Token {
                 token_type,
@@ -111,11 +176,12 @@ fn get_token(chars: &[char],current: &mut usize,line: usize,file: &str,) -> Lexe
         '}' => TokenType::RBrace,
 
         ',' => TokenType::Comma,
-
+        ';' => TokenType::Semicolon,
         '+' => TokenType::Plus,
         '-' => TokenType::Minus,
         '*' => TokenType::Multiply,
         '/' => TokenType::Divide,
+        '=' => TokenType::Assign,
 
         _ => {
             return Err(
@@ -147,7 +213,7 @@ fn get_token(chars: &[char],current: &mut usize,line: usize,file: &str,) -> Lexe
     )
 }
 
-fn tokenize_line(line_content: &str,line_number: usize,file: &str) -> LexerResult<Vec<Token>>
+pub fn tokenize_line(line_content: &str,line_number: usize,file: &str) -> LexerResult<Vec<Token>>
 {
     let chars: Vec<char> =
         line_content.chars().collect();

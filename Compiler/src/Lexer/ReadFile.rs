@@ -1,4 +1,5 @@
-mod ReadFile;
+use crate::Structure::FileStruct::*;
+
 use std::fs;
 
 pub fn load_files(paths: Vec<String>) -> Vec<SourceFile>

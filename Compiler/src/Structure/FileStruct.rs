@@ -1,5 +1,3 @@
-mod FileStruct;
-
 // ==========================
 // POSITION / ERREURS
 // ==========================
@@ -188,13 +186,30 @@ pub struct Program {
 // ==========================
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum TokenType {
+pub enum TokenType
+{
+    // Mots-clés
     Function,
     Return,
 
+    TypeInt,
+    TypeFloat,
+    TypeText,
+    TypeVoid,
+
+    // Littéraux
     Identifier(String),
     Number(String),
+    StringLiteral(String),
 
+    // Opérateurs
+    Plus,
+    Minus,
+    Multiply,
+    Divide,
+    Assign,
+
+    // Symboles
     LParen,
     RParen,
 
@@ -202,18 +217,17 @@ pub enum TokenType {
     RBrace,
 
     Comma,
-
-    Plus,
-    Minus,
-    Multiply,
-    Divide,
+    Semicolon,
 
     EOF,
 }
 
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct Token {
     pub token_type: TokenType,
     pub span: Span,
 }
+
 
 pub type LexerResult<T> = Result<T, CompilerError>;
