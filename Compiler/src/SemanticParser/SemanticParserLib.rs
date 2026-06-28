@@ -23,6 +23,28 @@ impl SemanticAnalyzer {
 
         self.analyze_functions(program)?;
 
+        self.look_for_main(program)?;
+
+        Ok(())
+    }
+
+    fn look_for_main(&self,program: &Program,) -> ParseResult<()>
+    {
+        if !self.functions.contains_key("general") {
+
+                return Err(
+                    CompilerError {
+                        file: program.files[0].path.clone(),
+                        message: "Fonction 'main' introuvable".to_string(),
+                        span: Span {
+                            line: 0,
+                            column: 0,
+                            length: 0,
+                        },
+                    }
+                );
+        }
+
         Ok(())
     }
 

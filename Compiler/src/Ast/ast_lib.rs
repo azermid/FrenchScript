@@ -97,6 +97,11 @@ impl Parser
             "')' attendu"
         )?;
 
+        // parse le type de retour pas sur d'en avoir un 
+
+        let return_type_parse  = self.parse_type()?;
+
+
         self.consume(
             TokenType::LBrace,
             "'{' attendu"
@@ -114,7 +119,7 @@ impl Parser
             Function {
                 name,
                 parameters,
-                return_type: Type::Void,
+                return_type: return_type_parse,
                 body,
                 span: start_span,
             }

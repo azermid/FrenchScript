@@ -3,6 +3,11 @@ mod Lexer;
 mod Structure;
 mod Ast;
 mod SemanticParser;
+mod IR;
+mod Binary;
+
+#[cfg(test)]
+mod test;
 
 use crate::ErrorHandling::ArgHandling::validate_file; 
 use crate::Lexer::LibParse::tokenize_file;
@@ -10,6 +15,8 @@ use crate::Lexer::ReadFile::load_files;
 use crate::Structure::FileStruct::*;
 use crate::Ast::ast_lib::*;
 use crate::SemanticParser::SemanticParserLib::SemanticAnalyzer;
+use crate::IR::IR::{IRGenerator, IRInstruction, IRProgram};
+use crate::Binary::*;
 
 
 use std::env;
@@ -47,5 +54,11 @@ fn main() {
         return;
     }
 
-    println!("Tokens : {:?}", program);
+    let mut ir_gen = IR::IR::IRGenerator::new();
+
+    let ir_program = ir_gen.generate(&program);
+
+    // 4. Affichage debug
+    println!("{:#?}", ir_program);
+
 }
